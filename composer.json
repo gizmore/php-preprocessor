@@ -1,0 +1,20 @@
+{
+	"name" : "gizmore/php-preprocessor",
+	"description" : "Remove debug code from your production build with a php preprocessor.",
+	"type" : "library",
+	"license" : "MIT",
+	"authors" : [{
+			"name" : "gizmore",
+			"email" : "gizmore@wechall.net"
+		}
+	],
+	"minimum-stability" : "dev",
+	"require" : {
+		"php" : ">=8.1"
+	},
+	"autoload" : {
+		"psr-4" : {
+			"gizmore\\pp" : "src/"
+		}
+	}
+}

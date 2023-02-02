@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+gdopath="$(dirname "$0")/pp.php"
+php $gdopath $@

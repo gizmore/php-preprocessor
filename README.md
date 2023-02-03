@@ -1,11 +1,15 @@
 # PP: php-preprocessor
 
-A very simple PHP Preprocessor.
+A very simple PHP preprocessor.
 Buggy and *not* turing complete.
-The syntax is compatible with PHP.
-I use it to turn development code into a production installation.
-This is simply done by deleting lines from production build.
+The syntax is compatible with PHP, abusing comments.
+I use this to turn my code into production mode after updates.
+This is done by deleting lines, mostly performance counters like instance, destructor and wakeup counts,
+timings and [other metrics](https://github.com/gizmore/phpgdo/blob/main/GDO/Perf/GDT_PerfBar.php#L35).
+But also some ifs for stuff you never or always want in production environments.
 
+Enjoy!
+ - gizmore
 
 ## php-preprocessor: Syntax
 

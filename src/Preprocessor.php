@@ -58,6 +58,7 @@ final class Preprocessor
 	###########
 	/**
 	 * Preprocess a string / file contents.
+	 * @param bool $php - a local variable if we are in php mode atm.
 	 */
 	public static function processString(string $string, bool $php = false): string
 	{
@@ -75,12 +76,14 @@ final class Preprocessor
 	 * 
 	 * @param resource $fin
 	 * @param resource $out
+	 * @param bool $php - a local variable if we are in php mode atm.
+	 * @param bool $ppc - a local variable if we are in a pp comment block atm.
 	 */
-	public static function processFiles($fin, $out, bool $php=false): void
+	public static function processFiles($fin, $out, bool $php=false, bool $ppc=false): void
 	{
 		while ($line = fgets($fin))
 		{
-			fwrite($out, self::processLine($line, $php));
+			fwrite($out, self::processLine($line, $php, $ppc));
 		}
 		return $out;
 	}
@@ -88,7 +91,7 @@ final class Preprocessor
 	###############
 	### Private ###
 	###############
-	private static function processLine(string $line, bool &$php): string
+	private static function processLine(string $line, bool &$php, bool &$ppc): string
 	{
 		if (strpos($line, '?>') !== false)
 		{
@@ -98,11 +101,26 @@ final class Preprocessor
 		{
 			$php = true;
 		}
-		elseif ($php && strpos('/#PP#delete/', $line))
+		elseif ($php)
 		{
-			return '';
+			$matches = [];
+			if (preg_match('/#PP#([a-z]+)#/iD', $line, $matches))
+			{
+				switch (strtolower($matches[1]))
+				{
+					case 'delete':
+						return '';
+					case 'start':
+						$ppc = true;
+						break;
+					case 'end':
+						$ppc = false;
+						break;
+				}
+				return '';
+			}
 		}
-		return $line;
+		return $ppc ? '' : $line;
 	}
 	
 	private static function openString(string $string)

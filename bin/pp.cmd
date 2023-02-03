@@ -1,3 +1,3 @@
 @echo OFF
-set location="%~dp0%gdo.php"
+set location="%~dp0%pp.php"
 php %location% %*

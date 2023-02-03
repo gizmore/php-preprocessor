@@ -6,53 +6,130 @@ namespace gizmore\pp;
  * Object is for the binary script streamer.
  * 
  * @author gizmore
- * @version 1.0.0
+ * @version 1.0.1
  */
 final class Preprocessor
 {
 	/**
 	 * @var resource
 	 */
-	private $fin;
+	private $in = STDIN;
 
 	/**
 	 * @var resource
 	 */
-	private $out;
+	private $out = STDOUT;
 	
-	private bool $php = false;
+	private bool $php = false; # inside php tags?
+	private bool $ppc = false; # inside pp codeblock?
+	private int $line = 0;
 	
-	/**
-	 * @param resource $fin
-	 * @param resource $out
-	 */
-	public function __construct($fin, $out)
+	public bool $recursive = false; # if infile is a folder. recurse it.
+	public bool $replace = false;   # replace original file(s)
+	public bool $simulate = false;  # simulate always to stdout
+	public bool $verbose = false;   # print scanning results
+	
+	public ?string $infile = null;
+	public ?string $outfile = null;
+	
+	private function close()
 	{
-		$this->fin = $fin;
-		$this->out = $out;
-	}
-	
-	public function __destruct()
-	{
-		if ($this->fin)
+		if ($this->in !== STDIN)
 		{
-			fclose($this->fin);
+			fclose($this->in);
+			$this->in = STDIN;
 		}
-		if ($this->out)
+		if ($this->out !== STDOUT)
 		{
 			fclose($this->out);
+			$this->out = STDOUT;
 		}
 	}
 	
-	/**
-	 * Run the preprocessor.
-	 */
-	public function process(): self
+	##############
+	### Config ###
+	##############
+	public function phpMode(bool $php=true): self
 	{
-		self::processFiles($this->fin, $this->out, $this->php);
+		$this->php = $php;
 		return $this;
 	}
-
+	
+	public function verbose(bool $verbose=true): self
+	{
+		$this->verbose = $verbose;
+		return $this;
+	}
+	
+	public function input(string $path): self
+	{
+		$this->infile = $path;
+		return $this;
+	}
+	
+	public function output(string $outfile): self
+	{
+		$this->outfile = $outfile;
+		return $this;
+	}
+	
+	public function simulate(bool $simulate=true): self
+	{
+		$this->simulate = $simulate;
+		return $this;
+	}
+	
+	public function recurse(bool $recurse=true): self
+	{
+		$this->recursive = $recurse;
+		return $this;
+	}
+	
+	public function replace(bool $replace=true): self
+	{
+		$this->replace = $replace;
+		return $this;
+	}
+	
+	##########
+	### Go ###
+	##########
+	public function execute(): bool
+	{
+		return $this->executeFor($this->infile, $this->outfile);
+	}
+	
+	public function executeFor(string $infile, string $outfile=null): bool
+	{
+		if ($outfile)
+		{
+			$this->out = fopen($outfile, 'w');
+			$this->verb('Opened output file.');
+		}
+		elseif ($this->replace)
+		{
+			$this->out = tmpfile();
+			$this->verb('Replace mode engaged.');
+		}
+		
+		if ($infile)
+		{
+			if (!is_readable($infile))
+			{
+				return $this->error("File {$infile} is not readable.");
+			}
+			if (is_dir($infile))
+			{
+				return $this->processFolder($infile);
+			}
+			if (is_file($infile))
+			{
+				$this->in = fopen($infile, 'r');
+			}
+		}
+		return $this->processStream($this->in, $this->out);
+	}
+	
 	###########
 	### API ###
 	###########
@@ -60,43 +137,30 @@ final class Preprocessor
 	 * Preprocess a string / file contents.
 	 * @param bool $php - a local variable if we are in php mode atm.
 	 */
-	public static function processString(string $string, bool $php = false): string
+	public function processString(string $string, bool $php = false): string
 	{
-		$fin = self::openString($string);
+		$this->php = $php;
+		$this->ppc = false;
+		$in = $this->openString($string);
 		$out = tmpfile();
-		self::processFiles($fin, $out, $php);
+		$this->processStream($in, $out);
 		$tmpname = stream_get_meta_data($out)['uri'];
-		fclose($fin);
+		fclose($in);
 		fclose($out);
 		return file_get_contents($tmpname);
 	}
 
-	###################
-	### InPlace API ###
-	###################
-	public static function processPath(string $path): bool
+	public function processFolder(string $path): bool
 	{
-		if (is_readable($path))
-		{
-			if (is_file($path))
-			{
-				return self::processFolder($path);
-			}
-			elseif (is_dir($path))
-			{
-				return self::processFilename($path);
-			}
-		}
-		return false;
+		$rec = $this->recursive ? 256: 0;
+		$func = [$this, 'processFile'];
+		Filewalker::traverse($path, '/.php$/iD', $func, null, $rec);
+		return true;
 	}
 	
-	public static function processFolder(string $path): bool
+	public function processFile(string $entry, string $fullpath, $args=null): void
 	{
-	}
-	
-	public static function processFilename(string $path): bool
-	{
-		
+		$this->executeFor($fullpath, null);
 	}
 	
 	/**
@@ -104,32 +168,58 @@ final class Preprocessor
 	 * 
 	 * @param resource $fin
 	 * @param resource $out
-	 * @param bool $php - a local variable if we are in php mode atm.
-	 * @param bool $ppc - a local variable if we are in a pp comment block atm.
 	 */
-	public static function processFiles($fin, $out, bool $php=false, bool $ppc=false): void
+	public function processStream($in, $out): bool
 	{
-		while ($line = fgets($fin))
+		$this->line = 0;
+		
+		$infile = stream_get_meta_data($in)['uri'];
+		$outpath = stream_get_meta_data($out)['uri'];
+		
+		$this->verb("Processing {$infile}");
+		
+		while (false !== ($line = fgets($in)))
 		{
-			fwrite($out, self::processLine($line, $php, $ppc));
+			$this->line++;
+			
+			if ('' === ($processed = self::processLine($line)))
+			{
+				$this->verb("Deleted: {$line}");
+			}
+			elseif ($this->simulate)
+			{
+				fwrite(STDOUT, $processed);
+			}
+			else
+			{
+				fwrite($out, $processed);
+			}
 		}
-		return $out;
+		
+		$this->close();
+		
+		if ($this->replace)
+		{
+			return rename($outpath, $infile);
+		}
+		
+		return true;
 	}
 	
 	###############
 	### Private ###
 	###############
-	private static function processLine(string $line, bool &$php, bool &$ppc): string
+	private function processLine(string $line): string
 	{
 		if (strpos($line, '?>') !== false)
 		{
-			$php = false;
+			$this->php = false;
 		}
 		elseif (stripos($line, '<?php') !== false)
 		{
-			$php = true;
+			$this->php = true;
 		}
-		elseif ($php)
+		elseif ($this->php)
 		{
 			$matches = [];
 			if (preg_match('/#PP#([a-z]+)#/iD', $line, $matches))
@@ -137,23 +227,47 @@ final class Preprocessor
 				switch (strtolower($matches[1]))
 				{
 					case 'delete':
+						$this->verb("Line {$this->line}: delete");
 						return '';
 					case 'start':
-						$ppc = true;
+						$this->verb("Line {$this->line}: start");
+						$this->ppc = true;
 						break;
 					case 'end':
-						$ppc = false;
+						$this->verb("Line {$this->line}: end");
+						$this->ppc = false;
 						break;
 				}
 				return '';
 			}
 		}
-		return $ppc ? '' : $line;
+		return $this->ppc ? '' : $line;
 	}
 	
-	private static function openString(string $string)
+	private function openString(string $string)
 	{
 		return fopen("data://text/plain, {$string}", 'r');
+	}
+	
+	public function error(string $error): bool
+	{
+		fwrite(STDERR, "{$error}\n");
+		return false;
+	}
+	
+	public function message(string $msg): bool
+	{
+		fwrite(STDOUT, "{$msg}\n");
+		return true;
+	}
+	
+	public function verb(string $msg): bool
+	{
+		if ($this->verbose)
+		{
+			fwrite(STDOUT, "{$msg}\n");
+		}
+		return true;
 	}
 	
 }

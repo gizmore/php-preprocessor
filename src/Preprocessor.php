@@ -2,9 +2,6 @@
 namespace gizmore\pp;
 
 /**
- * Use the static API.
- * Object is for the binary script streamer.
- * 
  * @author gizmore
  * @version 1.0.1
  */

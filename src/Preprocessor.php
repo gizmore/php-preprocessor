@@ -70,6 +70,34 @@ final class Preprocessor
 		fclose($out);
 		return file_get_contents($tmpname);
 	}
+
+	###################
+	### InPlace API ###
+	###################
+	public static function processPath(string $path): bool
+	{
+		if (is_readable($path))
+		{
+			if (is_file($path))
+			{
+				return self::processFolder($path);
+			}
+			elseif (is_dir($path))
+			{
+				return self::processFilename($path);
+			}
+		}
+		return false;
+	}
+	
+	public static function processFolder(string $path): bool
+	{
+	}
+	
+	public static function processFilename(string $path): bool
+	{
+		
+	}
 	
 	/**
 	 * Process via two file handles.

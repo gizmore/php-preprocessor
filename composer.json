@@ -8,13 +8,34 @@
 			"email" : "gizmore@wechall.net"
 		}
 	],
+	"repositories": [
+		{
+			"type": "package",
+			"package": {
+				"name": "gizmore/php-filewalker",
+				"version": "7.0.1",
+				"type": "library",
+				"source": {
+					"url": "https://github.com/gizmore/php-filewalker",
+					"type": "git",
+					"reference": "main"
+				}
+			}
+		}
+	],
 	"minimum-stability" : "dev",
+	"bin" : [
+		"bin/pp.php",
+		"bin/pp.cmd",
+		"bin/pp"
+	],
 	"require" : {
-		"php" : ">=8.1"
+		"php" : ">=8.0",
+		"gizmore/php-filewalker" : "^7.0.1"
 	},
 	"autoload" : {
 		"psr-4" : {
-			"gizmore\\pp" : "src/"
+			"gizmore\\pp\\" : "src/"
 		}
 	}
 }

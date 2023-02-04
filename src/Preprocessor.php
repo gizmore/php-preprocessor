@@ -23,7 +23,7 @@ final class Preprocessor
 
 	private ?string $infile = null;  # full path
 
-	private string $recursionFilePattern = '/.php[34578]?$/iD';
+	private string $recursionFilePattern = '/\\.php[34578]?$/iD';
 
 	# state
 	private int $line = 0;

@@ -140,7 +140,13 @@ if you want to get in touch, send me an email to gizmore@wechall.net, or visit t
 [WeChall](https://www.wechall.net) website.
 
 
+### php-preprocessor: Dependencies
+
+PP has no third party dependencies, but uses my
+[php-filewalker](https://github.com/gizmore/php-filewalker) to traverse directories. 
+Filewalker is dependency free.
+
+
 ### php-preprocessor: License
 
-I decided to release this idea and code under the 
-[MIT license](./LICENSE).
+I decided to use the [MIT license](./LICENSE).

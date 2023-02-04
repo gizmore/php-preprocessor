@@ -85,7 +85,7 @@ Control your infile source with the argument or use STDIN.
 1) My [phpgdo](https://github.com/gizmore/phpgdo)
  [autoloader](https://github.com/gizmore/phpgdo/blob/main/GDO7.php#L29)
 
-
+```
     spl_autoload_register(function(string $name) : void
     {
         if ( ($name[0]==='G') && ($name[3]==='\\') ) # 1 line if
@@ -97,6 +97,7 @@ Control your infile source with the argument or use STDIN.
             $GDT_LOADED++; # #PP#delete#
         }
     });
+```
 
 
 Note that we got rid of 3 costy lines in a **very** hot spot,

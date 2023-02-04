@@ -31,7 +31,7 @@
 	],
 	"require" : {
 		"php" : ">=8.0",
-		"gizmore/php-filewalker" : "^7.0.1"
+		"gizmore/php-filewalker" : "7.0.1"
 	},
 	"autoload" : {
 		"psr-4" : {

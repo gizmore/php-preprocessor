@@ -5,7 +5,7 @@ require 'vendor/autoload.php';
 
 $rest = null;
 
-$opt = getopt('ho::Rrpsv', ['outfile::', 'replace', 'recursive', 'verbose', 'help', 'simulate'], $rest);
+$opt = getopt('ho::Rrpsvu', ['outfile::', 'replace', 'recursive', 'verbose', 'help', 'simulate', 'uglify'], $rest);
 
 $files = array_slice($argv, $rest);
 
@@ -45,6 +45,11 @@ if (isset($opt['o']) || isset($opt['outfile']))
 	$pp->output($opt['o'] ? $opt['o'] : $opt['outfile']);
 }
 
+if (isset($opt['u']) || isset($opt['uglify']))
+{
+	$pp->uglify(true);
+}
+
 if (count($files) === 1)
 {
 	foreach ($files as $path)
@@ -54,6 +59,7 @@ if (count($files) === 1)
 	}
 }
 
+$pp->verb('Executing PP preprocesser...');
 if ($pp->execute())
 {
 	$pp->message('All done.');

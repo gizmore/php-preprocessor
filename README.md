@@ -67,6 +67,8 @@ Control your infile source with the parameter or use STDIN.
 
  - --help: print usage line and exit.
  
+ - --uglify: apply [uglify-php](https://github.com/isflavior/uglify-php) with all options enabled.
+ 
  - --outfile path: redirect STDOUT to another file.
  
  - --replace: write output to source file, when not in STDIN.
@@ -131,6 +133,8 @@ which simply makes some usecase ugly or **not possible** at the moment.
 
  - --profiler: Replace **all** `if()` calls with calls to a branch counter for a new performance metric.
 
+ - --uglify: Strip comments and whitespace with [uglify-php](https://github.com/isflavior/uglify-php). Tiny speedup for compilation process which is cached anyway, but still.
+ 
 
 ### php-preprocessor: Contact
 
@@ -142,8 +146,14 @@ if you want to get in touch, send me an email to gizmore@wechall.net, or visit t
 
 ### php-preprocessor: Dependencies
 
-PP has no **third party** dependencies, but uses my own 
-[php-filewalker](https://github.com/gizmore/php-filewalker) to traverse directories. Filewalker is dependency free.
+PP has **almost** no *third party* dependencies.
+
+Beside composer, it uses my own 
+[php-filewalker](https://github.com/gizmore/php-filewalker) to traverse directories. Filewalker *is* dependency free.
+
+However, when using the option --uglify 
+[uglify-php](https://github.com/isflavior/uglify-php)
+is required. Hence it is a composer dependency.
 
 
 ### php-preprocessor: License

@@ -38,7 +38,8 @@ final class Preprocessor
 	public bool $replace = false;   # replace original file(s)
 	public bool $simulate = false;  # simulate always to stdout
 	public bool $verbose = false;   # print scanning results
-	public bool $phpmode = false;   # Initial $php state
+	public bool $phpmode = false;   # initial $php state
+	public bool $uglify = false;   # apply php-uglify
 	
 	##############
 	### Config ###
@@ -85,6 +86,12 @@ final class Preprocessor
 	public function replace(bool $replace=true): self
 	{
 		$this->replace = $replace;
+		return $this;
+	}
+	
+	public function uglify(bool $uglify=true): self
+	{
+		$this->uglify = $uglify;
 		return $this;
 	}
 	
@@ -213,7 +220,17 @@ final class Preprocessor
 			}
 		}
 		
-		return $this->close();
+		if (!$this->close())
+		{
+			return false;
+		}
+		
+		if ($this->uglify)
+		{
+			$this->verb('Would run php-uglify now');
+		}
+		
+		return true;
 	}
 	
 	###############

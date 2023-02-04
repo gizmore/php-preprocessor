@@ -3,17 +3,17 @@
 A very simple but fast PHP preprocessor.
 Buggy and **not** turing complete.
 
-The syntax does not hurt PHP files and it should work with any PHP version.
+I use this to turn my code into production version, every time after an update in our CI.
 
-I use this to turn my code into production mode after updates.
-This is done by filtering lines, mostly performance counters like instance, destructor and wakeup counts,
-timings and [other metrics](https://github.com/gizmore/phpgdo/blob/main/GDO/Perf/GDT_PerfBar.php#L35).
-But also some `ifs` for stuff you never or always want in production environments.
+This is done by filtering some lines;
+performance counters, counting instances, con/destructor stuff, wakeup counters, timings and [other metrics](https://github.com/gizmore/phpgdo/blob/main/GDO/Perf/GDT_PerfBar.php#L35).
 
-It turned out to be really easy and seems to save quite some clock cycles.
+But also some `ifs` for stuff you never or always want in production environments, or are OS relevant.
 
-Enjoy!
-- gizmore
+It turned out to be easy and can save quite some clock cycles!
+
+Enjoy,
+gizmore
 
 ---
 
@@ -61,9 +61,9 @@ It is not 100% Unix style, but should work on windows and linux.
 
 You can control options via the pp executable or by using the API equivalents.
 
-Use `$pp->option` to get and `$pp->option($value)` to set.
+For API: Use `$pp->option` to get and `$pp->option($value)` to set.
 
-Control your infile source with the argument or use STDIN.
+Control your infile source with the parameter or use STDIN.
 
  - --help: print usage line and exit.
  
@@ -106,31 +106,35 @@ but *only* ony windows machines. Like on all my prod servers =)
 
 1. The string replace is only need on windows machines, which i do not recommend for an httpd production-env server.
 
-2. Two lines performance counters could be deleted.
+2. 2 lines performance countings could be deleted for prod machines. This does not seem much, but the function is not using  globals anymore, which *might* be a good hint for the optimizer.
 
-Number 2 does not seem much, but the function is not using  globals anymore, which might be a big hint for the zend optimizer.
+**Update**: *LOL*, The first `str_replace` is always needed,
+because `$name` is a classname, using `\\` to seperate namespaces,
+but there are other occassions were we can have a performance boost via `#PP#windows#`.
 
 
 ### php-preprocessor: Problems
 
-PP is pretty new, so handle with care, and i also found the first problems.
+PP is new, so handle it with care. I also found the first problems:
 
 1. Some of your **line numbers** on prod exception traces are a bit off.
 
 2. The too simple syntax can lead to forced invalid PHP code,
-which simply makes some usecase **not possible** at the moment.
+which simply makes some usecase ugly or **not possible** at the moment.
 
 
 ### php-preprocessor: ToDO / Ideas
 
  - `#PP#if(n)def,varname#` - to **keep** the line only if a constant named varname is / is not defined.
 
- - Profiler mode: replace all `if()` and ternary operations into calls for counting branches for a new performance metric.
+ - `#PP#if(n)is,varname,value#` - to **keep** the line if a constant named "varname" equals "value".
+
+ - --profiler: Replace **all** `if()` calls with calls to a branch counter for a new performance metric.
 
 
 ### php-preprocessor: Contact
 
-Of course, your pull requests and or new issues are welcome.
+Of course your pull requests and / or issues are welcome.
 
 if you want to get in touch, send me an email to gizmore@wechall.net, or visit the
 [WeChall](https://www.wechall.net) website.
@@ -138,5 +142,5 @@ if you want to get in touch, send me an email to gizmore@wechall.net, or visit t
 
 ### php-preprocessor: License
 
-I decided to release this mini idea and code under the 
+I decided to release this idea and code under the 
 [MIT license](./LICENSE).

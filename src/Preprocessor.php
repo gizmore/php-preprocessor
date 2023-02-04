@@ -5,10 +5,12 @@ use \gizmore\Filewalker;
 
 /**
  * @author gizmore
- * @version 1.0.1
+ * @version 1.0.2
  */
 final class Preprocessor
 {
+	 
+	# I/O
 	/**
 	 * @var resource
 	 */
@@ -19,10 +21,16 @@ final class Preprocessor
 	 */
 	private $out = STDOUT;
 
+	private ?string $infile = null;  # full path
+
+	private string $recursionFilePattern = '/.php[34578]?$/iD';
+
+	# state
+	private int $line = 0;
+	private int $linesProcessed = 0;
 	private bool $php = false; # inside php tags?
 	private bool $ppc = false; # inside #PP#start# #PP#end# block?
-	private int $line = 0;
-	private ?string $infile = null;  # full path
+	
 	
 	# options
 	public ?string $outfile = null; # full path
@@ -122,35 +130,31 @@ final class Preprocessor
 	###########
 	### API ###
 	###########
-	/**
-	 * Preprocess a string / file contents.
-	 * @param bool $php - a local variable if we are in php mode atm.
-	 */
-	public function processString(string $string, bool $php = false): string
+	public function processFile(string $path): void
 	{
-		$this->php = $php;
-		$this->ppc = false;
+		$this->executeFor($path, null);
+	}
+	
+	public function processString(string $string): string
+	{
 		$in = $this->openString($string);
 		$out = tmpfile();
-		$this->processStream($in, $out);
-		$tmpname = stream_get_meta_data($out)['uri'];
-		fclose($in);
-		fclose($out);
-		return file_get_contents($tmpname);
+		return $this->processStreamB($in, $out, true);
 	}
 
 	public function processFolder(string $path): bool
 	{
 		$rec = $this->recursive ? 256: 0;
-		$func = [$this, 'processFile'];
-		Filewalker::traverse($path, '/.php$/iD', $func, null, $rec);
+		$func = [$this, 'processFileCB'];
+		Filewalker::traverse($path, $recursionFilePattern, $func, null, $rec);
 		return true;
 	}
 	
-	public function processFile(string $entry, string $fullpath, $args=null): void
+	public function processFileCB(string $entry, string $fullpath): void
 	{
-		$this->executeFor($fullpath, null);
+		$this->processFile($fullpath);
 	}
+	
 	
 	/**
 	 * Process via two file handles.
@@ -159,6 +163,11 @@ final class Preprocessor
 	 * @param resource $out
 	 */
 	public function processStream($in, $out): bool
+	{
+		return $this->processStreamB($in, $out, false);
+	}
+	
+	private function processStreamB($in, $out, bool $stringmode): bool
 	{
 		$this->php = $this->phpmode;
 		$this->ppc = false;
@@ -181,6 +190,10 @@ final class Preprocessor
 			elseif ($this->simulate)
 			{
 				fwrite(STDOUT, $processed);
+				if ($stringmode)
+				{
+					fwrite($out, $processed);
+				}
 			}
 			else
 			{

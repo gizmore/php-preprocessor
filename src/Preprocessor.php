@@ -1,6 +1,8 @@
 <?php
 namespace gizmore\pp;
 
+use \gizmore\Filewalker;
+
 /**
  * @author gizmore
  * @version 1.0.1

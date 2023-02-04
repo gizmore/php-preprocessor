@@ -16,10 +16,11 @@ final class sample
 		
 	}
 	#PP#end#
-
+	
 	public static function normalFunction()
 	{
-		
+		$SOMETHING = 'hello linux'; #PP#linux#
+		$SOMETHING = 'hello windows'; #PP#windows#
 	}
 	
 }

@@ -16,7 +16,7 @@ $pp = new Preprocessor();
 ###############
 if (isset($opt['h']) || (isset($opt['help'])) || count($files) > 1)
 {
-	echo "Usage: {$argv[0]} [--help] [--verbose] [--simulate] [--output] [--recursive] [--replace] [<path>]";
+	echo "Usage: {$argv[0]} [--help] [--verbose] [--simulate] [--outfile] [--recursive] [--replace] [<path>]";
 	return 0;
 }
 
@@ -49,7 +49,7 @@ if (count($files) === 1)
 {
 	foreach ($files as $path)
 	{
-		$pp->verb("Process: {$path}");
+		$pp->verb("Processing {$path}");
 		$pp->input($path);
 	}
 }

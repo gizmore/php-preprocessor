@@ -18,39 +18,29 @@ final class Preprocessor
 	 * @var resource
 	 */
 	private $out = STDOUT;
-	
+
 	private bool $php = false; # inside php tags?
-	private bool $ppc = false; # inside pp codeblock?
+	private bool $ppc = false; # inside #PP#start# #PP#end# block?
 	private int $line = 0;
+	private ?string $infile = null;  # full path
 	
+	# options
+	public ?string $outfile = null; # full path
 	public bool $recursive = false; # if infile is a folder. recurse it.
 	public bool $replace = false;   # replace original file(s)
 	public bool $simulate = false;  # simulate always to stdout
 	public bool $verbose = false;   # print scanning results
-	
-	public ?string $infile = null;
-	public ?string $outfile = null;
-	
-	private function close()
-	{
-		if ($this->in !== STDIN)
-		{
-			fclose($this->in);
-			$this->in = STDIN;
-		}
-		if ($this->out !== STDOUT)
-		{
-			fclose($this->out);
-			$this->out = STDOUT;
-		}
-	}
+	public bool $phpmode = false;   # Initial $php state
 	
 	##############
 	### Config ###
 	##############
-	public function phpMode(bool $php=true): self
+	/**
+	 * Set the initial php state, i.e. if the processor shall be in initial <?php state.
+	 */
+	public function phpMode(bool $state=true): self
 	{
-		$this->php = $php;
+		$this->phpmode = $state;
 		return $this;
 	}
 	
@@ -90,9 +80,9 @@ final class Preprocessor
 		return $this;
 	}
 	
-	##########
-	### Go ###
-	##########
+	############
+	### Exec ###
+	############
 	public function execute(): bool
 	{
 		return $this->executeFor($this->infile, $this->outfile);
@@ -170,6 +160,8 @@ final class Preprocessor
 	 */
 	public function processStream($in, $out): bool
 	{
+		$this->php = $this->phpmode;
+		$this->ppc = false;
 		$this->line = 0;
 		
 		$infile = stream_get_meta_data($in)['uri'];
@@ -181,6 +173,7 @@ final class Preprocessor
 		{
 			$this->line++;
 			
+			# empty lines are actually \n
 			if ('' === ($processed = self::processLine($line)))
 			{
 				$this->verb("Deleted: {$line}");
@@ -197,17 +190,31 @@ final class Preprocessor
 		
 		if ($this->replace)
 		{
-			return rename($outpath, $infile);
+			if ($this->simulate)
+			{
+				$this->verb("Skipping the replace in simulation mode.");
+			}
+			else
+			{
+				return rename($outpath, $infile);
+			}
 		}
 		
-		$this->close();
-		
-		return true;
+		return $this->close();
 	}
 	
 	###############
 	### Private ###
 	###############
+	/**
+	 * Turn a string into a stream:
+	 * @return resource
+	 */
+	private function openString(string $string)
+	{
+		return fopen("data://text/plain, {$string}", 'r');
+	}
+	
 	private function processLine(string $line): string
 	{
 		if (strpos($line, '?>') !== false)
@@ -228,26 +235,59 @@ final class Preprocessor
 					case 'delete':
 						$this->verb("Line {$this->line}: delete");
 						return '';
+					
 					case 'start':
 						$this->verb("Line {$this->line}: start");
 						$this->ppc = true;
-						break;
+						return '';
+					
 					case 'end':
 						$this->verb("Line {$this->line}: end");
 						$this->ppc = false;
+						return '';
+
+					case 'linux':
+						if (!self::OS('lin'))
+						{
+							return '';
+						}
 						break;
+						
+					case 'windows':
+						if (!self::OS('win'))
+						{
+							return '';
+						}
+						break;
+						
+					default:
+						throw new \Exception(sprintf('Unknown #PP# command: #PP#%s#', $matches[1]));
 				}
-				return '';
 			}
 		}
+		
+		# return the line, unless in #PP#start# mode
 		return $this->ppc ? '' : $line;
 	}
 	
-	private function openString(string $string)
+	private function close(): bool
 	{
-		return fopen("data://text/plain, {$string}", 'r');
+		if ($this->in !== STDIN)
+		{
+			fclose($this->in);
+			$this->in = STDIN;
+		}
+		if ($this->out !== STDOUT)
+		{
+			fclose($this->out);
+			$this->out = STDOUT;
+		}
+		return true;
 	}
 	
+	##############
+	### Output ###
+	##############
 	public function error(string $error): bool
 	{
 		fwrite(STDERR, "{$error}\n");
@@ -267,6 +307,17 @@ final class Preprocessor
 			fwrite(STDOUT, "{$msg}\n");
 		}
 		return true;
+	}
+	
+	###############
+	### Utility ###
+	###############
+	/**
+	 * Check the OS signature for a substring.
+	 */
+	public static function OS(string $string_sequence):bool
+	{
+		return !!stristr(PHP_OS, $string_sequence);
 	}
 	
 }

@@ -195,12 +195,12 @@ final class Preprocessor
 			}
 		}
 		
-		$this->close();
-		
 		if ($this->replace)
 		{
 			return rename($outpath, $infile);
 		}
+		
+		$this->close();
 		
 		return true;
 	}

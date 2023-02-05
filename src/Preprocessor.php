@@ -153,7 +153,7 @@ final class Preprocessor
 	{
 		$rec = $this->recursive ? 256: 0;
 		$func = [$this, 'processFileCB'];
-		Filewalker::traverse($path, $recursionFilePattern, $func, null, $rec);
+		Filewalker::traverse($path, $this->recursionFilePattern, $func, null, $rec);
 		return true;
 	}
 	

@@ -29,7 +29,7 @@ final class Preprocessor
 	private int $line = 0;
 	private int $linesProcessed = 0;
 	private bool $php = false; # inside php tags?
-	private bool $ppc = false; # inside #PP#start# #PP#end# block?
+	private bool $ppc = false; # inside #pp#start# #pp#end# block?
 	
 	
 	# options

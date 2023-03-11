@@ -258,7 +258,7 @@ final class Preprocessor
 		elseif ($this->php)
 		{
 			$matches = [];
-			if (preg_match('/#PP#([a-z]+)#/iD', $line, $matches))
+			if (preg_match('/#PP#([a-z]+)#/D', $line, $matches))
 			{
 				switch (strtolower($matches[1]))
 				{

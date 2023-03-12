@@ -146,7 +146,8 @@ final class Preprocessor
 	{
 		$in = $this->openString($string);
 		$out = tmpfile();
-		return $this->processStreamB($in, $out, true);
+		$this->processStreamB($in, $out, true);
+		return stream_get_contents($out);
 	}
 
 	public function processFolder(string $path): bool
